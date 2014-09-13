@@ -13,26 +13,29 @@ last_line = None
 def add_point(event):
     """Adds a point to the 'points' list and draw it on the canvas"""
     global last_line
+    ex, ey = event.x, event.y
 
     # Create the point
-    points.append((event.x, event.y))
-    i = canvas.create_oval((event.x - 2, event.y - 2, event.x + 2, event.y + 2))
+    points.append((ex, ey))
+    i = canvas.create_oval((ex - 2, ey - 2, ex + 2, ey + 2))
     canvas.addtag('point', 'withtag', i)
 
     # Connect lines to the point
     if len(points) > 1:
-        point1 = points[-1]
-        point2 = points[-2]
-        i = canvas.create_line((point1[0], point1[1], point2[0], point2[1]))
+        x1, y1 = points[-1]
+        x2, y2 = points[-2]
+        i = canvas.create_line((x1, y1, x2, y2))
         canvas.addtag('line', 'withtag',  i)
-    if len(points) >= 3:
-        point1 = points[-1]
-        point2 = points[0]
+
+    # If we have enough points to create a polygon, connect the last point
+    # with the first point.
+    if len(points) > 2:
+        x1, y1 = points[-1]
+        x2, y2 = points[0]
         if last_line != None:
             canvas.delete(last_line)
-        last_line = canvas.create_line((point1[0], point1[1], point2[0], point2[1]))
+        last_line = canvas.create_line((x1, y1, x2, y2))
         canvas.addtag('line', 'withtag', last_line)
-    print(event.x, event.y)
 
 def clear_canvas():
     """Deletes the current polygon from the canvas."""

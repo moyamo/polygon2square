@@ -37,6 +37,12 @@ class Triangle:
             new_points.append((nx, ny))
         return Triangle(tuple(new_points))
 
+    def translate(self, translation):
+        """Return a new triangle translated by 'translation'"""
+        tx, ty = translation
+        new_points = [(x + tx, y + ty) for x, y in self.points]
+        return Triangle(tuple(new_points))
+
 
 class Shape:
     """A class structure for representing and minipulating arbitary shapes.

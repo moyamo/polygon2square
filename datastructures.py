@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import math
+
 class Triangle:
     """A class structure for storing and minipulating a triangle.
 
@@ -17,7 +19,24 @@ class Triangle:
     def __init__(self, tpl):
         """tpl is a 3-tuple of coordinates"""
         self.points = tpl
+    
+    def rotate(self, pivot, rangle):
+        """Return a new triangle rotate clockwise (by angle) around pivot.
         
+        pivot -- A coordinate pair
+        rangle -- The angle to rotate by in radians"""
+        new_points = list()
+        px, py = pivot
+        for x, y in self.points:
+            dx, dy = x - px, y - py
+            current_angle = math.atan2(dy, dx)
+            total_angle = current_angle + rangle
+            r = math.hypot(dx, dy)
+            nx = r*math.cos(total_angle) + px
+            ny = r*math.sin(total_angle) + py
+            new_points.append((nx, ny))
+        return Triangle(tuple(new_points))
+
 
 class Shape:
     """A class structure for representing and minipulating arbitary shapes.

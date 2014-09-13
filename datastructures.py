@@ -30,7 +30,7 @@ class Triangle:
         for x, y in self.points:
             dx, dy = x - px, y - py
             current_angle = math.atan2(dy, dx)
-            total_angle = current_angle + rangle
+            total_angle = current_angle - rangle
             r = math.hypot(dx, dy)
             nx = r*math.cos(total_angle) + px
             ny = r*math.sin(total_angle) + py

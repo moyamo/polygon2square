@@ -2,6 +2,79 @@
 
 import math
 
+def float_eq(a, b):
+    """Check if two floats are equal within a certain accuracy."""
+    # At the moment the accuracy is exact
+    if a == b:
+        return True
+    else:
+        return False
+
+def intersection(line, line_segment):
+    """Returns the intersection the line and line_segment or None if they do
+    not intersect.
+
+    This function is useful for splitting polygons by a straight line.
+    
+    line and line_segment are both two coordinate pairs representing a straight
+    line"""
+
+    def linepoints_to_lineformula(linepoints):
+        """Converts a line represented as two point into a line represented by
+        the formula Ax + By + C = 0. Returns the tuple (A, B, C)"""
+        p1, p2 = linepoints
+        x1, y1 = p1
+        x2, y2 = p2
+        A = y1 - y2
+        B = x2 - x1
+        C = -A*x1 - B*y1
+        assert float_eg(C, -A*x2 - B*y2)
+        return (A, B, C)
+    
+    def is_parallel(line1, line2):
+        """Checks if two lines (represented as a line formula) are parallel.
+        This would imply that there are no, or infinately many solutions. To
+        intersecting lines"""
+        A1, B1, C1 = line
+        A2, B2, C2 = line
+        if float_eq(A1 * B2, A2 * B1):
+            return True
+        else:
+            return False
+
+    def intersection(line1, line2):
+        """Calculate the intersection of two lines"""
+        A1, B1, C1 = line1
+        A2, B2, C2 = line2
+        y = (A2*C1 - A1*C2) / (A1 * B2 - A2 * B1)
+        x = (B2*C1 - B1*C2) / (A1 * B2 - A2 * B1)
+        return (x, y)
+
+    def between(x, a, b):
+        """Returns true if x is between a and b (inclusive)"""
+        s = min(a, b)
+        t = max(a, b)
+        if s <= x <= t:
+            return True
+        else:
+            return False
+
+    lineform = linepoints_to_lineformula(line)
+    linesegform = linepoints_to_lineformula(line_segment)
+    if is_parallel(linesegform, lineform):
+        return None
+    else:
+        x, y = intersection(lineform, linesegform)
+        p1, p2 = line_segment
+        x1, y1 = p1
+        x2, y2 = p2
+        # Is the intersection on the line_segment?
+        if between(x, x1, x2) and between(y, y1, y2):
+            return (x, y)
+        else:
+            return None
+
+
 class Triangle:
     """A class structure for storing and minipulating a triangle.
 
@@ -42,6 +115,11 @@ class Triangle:
         tx, ty = translation
         new_points = [(x + tx, y + ty) for x, y in self.points]
         return Triangle(tuple(new_points))
+
+    def split(self, line_segment):
+        """Splits the Triangle into a Triangle and a Shape (quadrilateral)
+        seperated by line_segment"""
+        pass
 
 
 class Shape:

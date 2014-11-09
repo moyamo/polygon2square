@@ -2,7 +2,7 @@
 
 from tkinter import *
 from tkinter import ttk
-from datastructures import Triangle
+from geometry import Triangle
 import math
 
 PHI = (1 + 5**0.5) / 2

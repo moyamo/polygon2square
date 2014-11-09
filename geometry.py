@@ -11,44 +11,11 @@ def float_eq(a, b):
         return False
 
 def intersection(line, line_segment):
-    """Returns the intersection the line and line_segment or None if they do
+    """Returns the intersection the Line and LineSegment or None if they do
     not intersect.
 
     This function is useful for splitting polygons by a straight line.
-    
-    line and line_segment are both two coordinate pairs representing a straight
-    line"""
-
-    def linepoints_to_lineformula(linepoints):
-        """Converts a line represented as two point into a line represented by
-        the formula Ax + By + C = 0. Returns the tuple (A, B, C)"""
-        p1, p2 = linepoints
-        x1, y1 = p1
-        x2, y2 = p2
-        A = y1 - y2
-        B = x2 - x1
-        C = -A*x1 - B*y1
-        assert float_eg(C, -A*x2 - B*y2)
-        return (A, B, C)
-    
-    def is_parallel(line1, line2):
-        """Checks if two lines (represented as a line formula) are parallel.
-        This would imply that there are no, or infinately many solutions. To
-        intersecting lines"""
-        A1, B1, C1 = line
-        A2, B2, C2 = line
-        if float_eq(A1 * B2, A2 * B1):
-            return True
-        else:
-            return False
-
-    def intersection(line1, line2):
-        """Calculate the intersection of two lines"""
-        A1, B1, C1 = line1
-        A2, B2, C2 = line2
-        y = (A2*C1 - A1*C2) / (A1 * B2 - A2 * B1)
-        x = (B2*C1 - B1*C2) / (A1 * B2 - A2 * B1)
-        return (x, y)
+    """
 
     def between(x, a, b):
         """Returns true if x is between a and b (inclusive)"""
@@ -59,13 +26,12 @@ def intersection(line, line_segment):
         else:
             return False
 
-    lineform = linepoints_to_lineformula(line)
-    linesegform = linepoints_to_lineformula(line_segment)
-    if is_parallel(linesegform, lineform):
+    linesegform = line_segment.to_line()
+    if line.is_parallel_to(linesegform):
         return None
     else:
-        x, y = intersection(lineform, linesegform)
-        p1, p2 = line_segment
+        x, y = lineform.intersection(linesegform)
+        p1, p2 = line_segment.points
         x1, y1 = p1
         x2, y2 = p2
         # Is the intersection on the line_segment?
@@ -85,11 +51,27 @@ class LineSegment:
         """
         self.points = (point1, point2)
 
+    def to_line(self):
+        """Converts this LineSegment into a Line (by extending both ends)
+
+        Returns a Line
+        """
+        p1, p2 = self.points
+        x1, y1 = p1
+        x2, y2 = p2
+        A = y1 - y2
+        B = x2 - x1
+        C = -A*x1 - B*y1
+        assert float_eq(C, -A*x2 - B*y2)
+        return Line(A, B, C)
+    
 class Line:
     """A straight line
     
     Represents a straight line as (A, B, C) where Ax + By + C = 0 and
-    A + B + C = 1
+    A + B + C = 1.
+
+    Should be treated as an immutable data structure.
     """
     def __init__(self, A, B, C):
         """Ax + By + C = 0 and A + B + C = 1
@@ -97,9 +79,10 @@ class Line:
         NOTE: The constructor will ensure A + B + C = 1, the caller need not
         worry about homogenizing the coordinates.
         """
-        self.A = A
-        self.B = B
-        self.C = C
+        sums = A + B + C
+        self.A = A / sums
+        self.B = B / sums
+        self.C = C / sums
 
     def side_of_line(self, point):
         """Returns the number 1, 0, -1 if point is on the positive side, on the
@@ -114,6 +97,23 @@ class Line:
             return 1
         elif value < 0:
             return -1
+
+    def is_parallel_to(self, line2):
+        """Checks if this lines is parallel to line2. """
+        A1, B1, C1 = self.A, self.B, self.C
+        A2, B2, C2 = line2.A, line2.B, line2.C
+        if float_eq(A1 * B2, A2 * B1):
+            return True
+        else:
+            return False
+
+    def intersection(self, line2):
+        """Calculate the intersection of this line with line2"""
+        A1, B1, C1 = self.A, self.B, self.C
+        A2, B2, C2 = line2.A, line2.B, line2.C
+        y = (A2*C1 - A1*C2) / (A1 * B2 - A2 * B1)
+        x = (B2*C1 - B1*C2) / (A1 * B2 - A2 * B1)
+        return (x, y)
 
 
 class Triangle:

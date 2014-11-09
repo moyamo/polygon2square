@@ -11,6 +11,7 @@ PHI = (1 + 5**0.5) / 2
 canvas_height = 300
 TRIANGLE_MODE = 0
 LINE_MODE = 1
+RIGHT_MODE = 2
 mode = TRIANGLE_MODE
 
 # A temporary list of points the user placed on the canvas
@@ -33,16 +34,16 @@ def draw_shape(shape):
     global color, color_inc
     tris = shape.triangles
     for t in tris:
-        i = canvas.create_polygon(t.points, fill=colors[t])
-        canvas.addtag('triangle', 'withtag', i)
-        canvas.tag_bind(i, '<Button-1>', rotate_triangle(i))
-        triangles[i] = t
+        make_triangle(t)
 
 
 def add_point(event):
     """Adds a point to the canvas. If there are three loose points, they will
     be connected to form a triangle."""
     global mode, triangles
+    if mode==RIGHT_MODE:
+        mode = TRIANGLE_MODE
+        return
     ex, ey = event.x, event.y
     points.append((ex, ey))
     i = canvas.create_oval((ex - 2, ey - 2, ex + 2, ey + 2))
@@ -65,10 +66,7 @@ def add_point(event):
         mode = TRIANGLE_MODE
     while len(points) >= 3 and mode == TRIANGLE_MODE:
         p1, p2, p3 = points.pop(), points.pop(), points.pop()
-        i = canvas.create_polygon((p1, p2, p3))
-        canvas.addtag('triangle', 'withtag', i)
-        canvas.tag_bind(i, '<Button-1>', rotate_triangle(i))
-        triangles[i] = Triangle((p1, p2, p3))
+        make_triangle(Triangle((p1, p2, p3)))
 
 def set_pivot(event):
     global global_pivot
@@ -77,16 +75,27 @@ def set_pivot(event):
 def update_rotate(x):
     rotate_display.set(x)
 
+def make_triangle(tri):
+    print(tri.points)
+    ni = canvas.create_polygon(tri.points, fill=colors[tri])
+    canvas.addtag('triangle', 'withtag', ni)
+    canvas.tag_bind(ni, '<Button-1>', rotate_triangle(ni))
+    triangles[ni] = tri
+
 def rotate_triangle(i):
     def rotate_tri(event):
-        new_tri = triangles[i].rotate(global_pivot, rotate.get() * math.pi / 180)
-        print(rotate.get() * math.pi / 180)
-        del triangles[i]
-        canvas.delete(i)
-        ni = canvas.create_polygon(new_tri.points, fill=colors[new_tri])
-        canvas.addtag('triangle', 'withtag', ni)
-        canvas.tag_bind(ni, '<Button-1>', rotate_triangle(ni))
-        triangles[ni] = new_tri
+        if mode == RIGHT_MODE:
+            a, b = triangles[i].to_rightangle()
+            del triangles[i]
+            canvas.delete(i)
+            make_triangle(a)
+            make_triangle(b)
+        else:
+            new_tri = triangles[i].rotate(global_pivot, rotate.get() * math.pi / 180)
+            print(rotate.get() * math.pi / 180)
+            del triangles[i]
+            canvas.delete(i)
+            make_triangle(new_tri)
     return rotate_tri
 
 def clear_canvas():
@@ -96,9 +105,9 @@ def clear_canvas():
     global_pivot = None
     canvas.delete('triangle', 'point', 'line')
 
-def set_state_line():
+def set_state(state):
     global mode
-    mode = LINE_MODE
+    mode = state
 
 root = Tk()
 frame = ttk.Frame(root)
@@ -111,7 +120,8 @@ rotate_label = ttk.Label(frame, text=rotate.get())
 rotate_display =  StringVar()
 rotate_label['textvariable'] = rotate_display
 clear = ttk.Button(frame, text='Clear', command = clear_canvas)
-cutLine = ttk.Button(frame, text='Cut By Line', command = set_state_line)
+cutLine = ttk.Button(frame, text='Cut By Line', command = lambda : set_state(LINE_MODE))
+right_angle = ttk.Button(frame, text='Right-angle', command = lambda : set_state(RIGHT_MODE))
 
 frame.grid()
 canvas.grid()
@@ -119,4 +129,5 @@ rotate.grid()
 rotate_label.grid()
 clear.grid()
 cutLine.grid()
+right_angle.grid()
 root.mainloop()

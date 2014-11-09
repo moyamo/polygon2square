@@ -241,3 +241,18 @@ class Shape:
     def __init__(self, triangle_list):
         """triangle_list is a list of triangles"""
         self.triangles = triangle_list
+    
+    def split(self, line):
+        """Splits the Shape into two shapes seperated by line.
+
+        All the points of the first shape will be on the non-negative side of
+        line. All the points of the second shape will be on the non-positive
+        side of the line.
+        """
+        up = list()
+        down = list()
+        for t in self.triangles:
+            u, d = t.split(line)
+            up.extend(u.triangles)
+            down.extend(d.triangles)
+        return (Shape(up), Shape(down))

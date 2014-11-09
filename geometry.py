@@ -157,48 +157,71 @@ class Triangle:
         new_points = [(x + tx, y + ty) for x, y in self.points]
         return Triangle(tuple(new_points))
 
-#    def split(self, line):
-#        """Splits the Triangle into two shapes seperated by line.
-#
-#        All the points of the first shape will be on the non-negative side of
-#        line. All the points of the second shape will be on the non-positive
-#        side of the line.
-#        """
-#        sides = [side_of_line(p, line) for p in self.points]
-#        # The whole triangle is on the same side of the line
-#        if sides[0] == sides[1] == sides[2]:
-#            if sides[0] == 1:
-#                return (Shape(self), Shape([]))
-#            else:
-#                return (Shape([]), Shape(self))
-#
-#        elif sorted(sides) == [-1, 0, 1]:
-#            inverse = [None for i in range(3)]
-#            for i, s in enumerate(sides):
-#                inverse[s % 3] = self.points[i]
-#            basepoint = intersection(line, (inverse[1], inverse[2]))
-#            pos_shape = Triangle((basepoint, inverse[0], inverse[1]))
-#            neg_shape = Triangle((basepoint, inverse[0], inverse[2]))
-#            return (Shape([pos_shape]), Shape([neg_shape]))
-#
-#        elif 0 in sides:
-#            if sides[0] == 1 or sides[1] == 1:
-#                return (Shape([self]), Shape([]))
-#            elif sides[0] == -1 or sides[1] == -1:
-#                return (Shape([]), Shape([self]))
-#
-#        else:
-#            segs = [(self.points[0], self.points[1]),
-#                    (self.points[0], self.points[2]),
-#                    (self.points[1], self.points[2])
-#                    ]
-#            intersects = (intersection(line, s) for s in segs)
-#            intersects = [for i in intersects if i != None]
-#            assert len(intersects) == 2
-#
+    @property
+    def segments(self):
+        """A list of segments representing the sides of the line."""
+        return [(self.points[0], self.points[1]),
+                (self.points[0], self.points[2]),
+                (self.points[1], self.points[2])
+                ]
 
-        
 
+    def split(self, line):
+        """Splits the Triangle into two shapes seperated by line.
+
+        All the points of the first shape will be on the non-negative side of
+        line. All the points of the second shape will be on the non-positive
+        side of the line.
+        """
+        sides = [line.side_of_line(p) for p in self.points]
+
+        # The whole triangle is on the same side of the line
+        if sides[0] == sides[1] == sides[2]:
+            if sides[0] == 1:
+                return (Shape(self), Shape([]))
+            else:
+                return (Shape([]), Shape(self))
+
+        # The triangle is cut into two, on one vertex
+        elif sorted(sides) == [-1, 0, 1]:
+            inverse = [None for i in range(3)]
+            for i, s in enumerate(sides):
+                inverse[s % 3] = self.points[i]
+            basepoint = line.intersection(inverse[1], inverse[2])
+            pos_shape = Triangle((basepoint, inverse[0], inverse[1]))
+            neg_shape = Triangle((basepoint, inverse[0], inverse[2]))
+            return (Shape([pos_shape]), Shape([neg_shape]))
+
+        # Line is "tangent" to triangle
+        elif 0 in sides:
+            if 1 in sides:
+                return (Shape([self]), Shape([]))
+            elif -1 in sides:
+                return (Shape([]), Shape([self]))
+
+        # Line intersects two segments
+        else:
+            segs = self.segments
+            intersects = (line.intersection(s) for s in segs)
+            intersects = [i for i in intersects if i != None]
+            assert len(intersects) == 2
+            sided_points = [[], []]
+            for i, s in enumerate(sides):
+                if s == 1:
+                    sided_points[1].append(self.points[i])
+                elif s == -1:
+                    sided_points[0].append(self.points[i])
+            if len(sided_points[0]) == 1:
+                t1 = Triangle((sided_points[0][0], intersects[0], intersects[1]))
+                t2 = Triangle((sided_points[1][0], intersects[0], intersects[1]))
+                t3 = Triangle((sided_points[1][0], sided_points[1][1], intersects[0]))
+            elif len(sided_points[1]) == 1:
+                t1 = Triangle((sided_points[1][0], intersects[0], intersects[1]))
+                t2 = Triangle((sided_points[0][0], intersects[0], intersects[1]))
+                t3 = Triangle((sided_points[0][0], sided_points[0][1], intersects[0]))
+                return (Shape([t2, t3]), Shape([t1]))
+            else:
+                raise Exception("Segments missing")
 
 class Shape:
     """A class structure for representing and minipulating arbitary shapes.

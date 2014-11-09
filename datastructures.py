@@ -74,6 +74,47 @@ def intersection(line, line_segment):
         else:
             return None
 
+class LineSegment:
+    """A straight line bounded by two points.
+
+    LineSegment represents a straight line that is bounded by two points.
+    The datastructure should be considered immutable.
+    """
+    def __init__(self, point1, point2):
+        """point1 and point2 represent the two bounding points of the segment
+        """
+        self.points = (point1, point2)
+
+class Line:
+    """A straight line
+    
+    Represents a straight line as (A, B, C) where Ax + By + C = 0 and
+    A + B + C = 1
+    """
+    def __init__(self, A, B, C):
+        """Ax + By + C = 0 and A + B + C = 1
+
+        NOTE: The constructor will ensure A + B + C = 1, the caller need not
+        worry about homogenizing the coordinates.
+        """
+        self.A = A
+        self.B = B
+        self.C = C
+
+    def side_of_line(self, point):
+        """Returns the number 1, 0, -1 if point is on the positive side, on the
+        line, on the negative side of the line respectively."""
+
+        A, B, C = self.A, self.B, self.C
+        x, y = point
+        value = A * x + B * y + C
+        if float_eq(value, 0):
+            return 0
+        elif value > 0:
+            return 1
+        elif value < 0:
+            return -1
+
 
 class Triangle:
     """A class structure for storing and minipulating a triangle.
@@ -116,10 +157,47 @@ class Triangle:
         new_points = [(x + tx, y + ty) for x, y in self.points]
         return Triangle(tuple(new_points))
 
-    def split(self, line_segment):
-        """Splits the Triangle into a Triangle and a Shape (quadrilateral)
-        seperated by line_segment"""
-        pass
+#    def split(self, line):
+#        """Splits the Triangle into two shapes seperated by line.
+#
+#        All the points of the first shape will be on the non-negative side of
+#        line. All the points of the second shape will be on the non-positive
+#        side of the line.
+#        """
+#        sides = [side_of_line(p, line) for p in self.points]
+#        # The whole triangle is on the same side of the line
+#        if sides[0] == sides[1] == sides[2]:
+#            if sides[0] == 1:
+#                return (Shape(self), Shape([]))
+#            else:
+#                return (Shape([]), Shape(self))
+#
+#        elif sorted(sides) == [-1, 0, 1]:
+#            inverse = [None for i in range(3)]
+#            for i, s in enumerate(sides):
+#                inverse[s % 3] = self.points[i]
+#            basepoint = intersection(line, (inverse[1], inverse[2]))
+#            pos_shape = Triangle((basepoint, inverse[0], inverse[1]))
+#            neg_shape = Triangle((basepoint, inverse[0], inverse[2]))
+#            return (Shape([pos_shape]), Shape([neg_shape]))
+#
+#        elif 0 in sides:
+#            if sides[0] == 1 or sides[1] == 1:
+#                return (Shape([self]), Shape([]))
+#            elif sides[0] == -1 or sides[1] == -1:
+#                return (Shape([]), Shape([self]))
+#
+#        else:
+#            segs = [(self.points[0], self.points[1]),
+#                    (self.points[0], self.points[2]),
+#                    (self.points[1], self.points[2])
+#                    ]
+#            intersects = (intersection(line, s) for s in segs)
+#            intersects = [for i in intersects if i != None]
+#            assert len(intersects) == 2
+#
+
+        
 
 
 class Shape:

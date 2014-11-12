@@ -12,6 +12,7 @@ canvas_height = 300
 TRIANGLE_MODE = 0
 LINE_MODE = 1
 RIGHT_MODE = 2
+RECT_MODE = 3
 mode = TRIANGLE_MODE
 
 # A temporary list of points the user placed on the canvas
@@ -36,12 +37,14 @@ def draw_shape(shape):
     for t in tris:
         make_triangle(t)
 
-
 def add_point(event):
     """Adds a point to the canvas. If there are three loose points, they will
     be connected to form a triangle."""
     global mode, triangles
     if mode==RIGHT_MODE:
+        mode = TRIANGLE_MODE
+        return
+    if mode == RECT_MODE:
         mode = TRIANGLE_MODE
         return
     ex, ey = event.x, event.y
@@ -76,7 +79,6 @@ def update_rotate(x):
     rotate_display.set(x)
 
 def make_triangle(tri):
-    print(tri.points)
     ni = canvas.create_polygon(tri.points, fill=colors[tri])
     canvas.addtag('triangle', 'withtag', ni)
     canvas.tag_bind(ni, '<Button-1>', rotate_triangle(ni))
@@ -90,6 +92,11 @@ def rotate_triangle(i):
             canvas.delete(i)
             make_triangle(a)
             make_triangle(b)
+        elif mode == RECT_MODE:
+            s = triangles[i].to_rectangle()
+            del triangles[i]
+            canvas.delete(i)
+            draw_shape(s)
         else:
             new_tri = triangles[i].rotate(global_pivot, rotate.get() * math.pi / 180)
             print(rotate.get() * math.pi / 180)
@@ -122,6 +129,7 @@ rotate_label['textvariable'] = rotate_display
 clear = ttk.Button(frame, text='Clear', command = clear_canvas)
 cutLine = ttk.Button(frame, text='Cut By Line', command = lambda : set_state(LINE_MODE))
 right_angle = ttk.Button(frame, text='Right-angle', command = lambda : set_state(RIGHT_MODE))
+rectangle = ttk.Button(frame, text='Rectangle', command = lambda : set_state(RECT_MODE))
 
 frame.grid()
 canvas.grid()
@@ -130,4 +138,5 @@ rotate_label.grid()
 clear.grid()
 cutLine.grid()
 right_angle.grid()
+rectangle.grid()
 root.mainloop()

@@ -56,6 +56,12 @@ class LineSegment:
         x2, y2 = self.points[1]
         return math.hypot(x1 - x2, y1 - y2)
 
+    def midpoint(self):
+        """Return midpoint of LineSegment"""
+        x1, y1 = self.points[0]
+        x2, y2 = self.points[1]
+        return ((x1 + x2) / 2, (y1 + y2) / 2)
+
     def to_line(self):
         """Converts this LineSegment into a Line (by extending both ends)
 
@@ -128,6 +134,14 @@ class Line:
         B = self.A
         C = -A*x - B*y
         return Line(A, B, C)
+
+    def parallel(self, point):
+        """Return a line parallel to this one passing through point"""
+        x, y = point
+        A = self.A
+        B = self.B
+        C = -A*x - B*y
+        return Line(A, B, C)
     
     def __repr__(self):
         return '(' + ', '.join(str(s) for s in [self.A, self.B, self.C]) + ')'
@@ -186,6 +200,7 @@ class Triangle:
         
         pivot -- A coordinate pair
         rangle -- The angle to rotate by in radians"""
+        print(self.points, pivot, rangle)
         new_points = list()
         px, py = pivot
         for x, y in self.points:
@@ -217,8 +232,25 @@ class Triangle:
         t2 =  Triangle((p[big_point], new_point, p[other_points[1]]))
         return (t1, t2)
         
-
-
+    def to_rectangle(self):
+        """Turns a right angle triangle into a rectangle (Shape)"""
+        p = self.points
+        # The point at right angle
+        right = self.largest_angle()
+        assert float_eq(self.angle(right), math.pi / 2)
+        other = [(right + 1) % 3, (right + 2) % 3]
+        hyp = self.segments[right]
+        base = self.segments[other[0]]
+        height = self.segments[other[1]]
+        # We will cut the triangle at the midpoint of the height
+        midp = height.midpoint()
+        rect_side = base.to_line().parallel(midp)
+        other_point = line_intersects_segment(rect_side, hyp)
+        t1 = Triangle((p[other[0]], midp, other_point)).rotate(other_point, math.pi)
+        t2 = Triangle((p[right], p[other[1]], midp))
+        t3 = Triangle((p[other[1]], midp, other_point))
+        return Shape([t1, t2, t3])
+        
     def split(self, line):
         """Splits the Triangle into two shapes seperated by line.
 

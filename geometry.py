@@ -80,21 +80,16 @@ class LineSegment:
 class Line:
     """A straight line
     
-    Represents a straight line as (A, B, C) where Ax + By + C = 0 and
-    A + B + C = 1.
+    Represents a straight line as (A, B, C) where Ax + By + C = 0.
+    The line is not normalised (I haven't found an elegent way to do this)
 
     Should be treated as an immutable data structure.
     """
     def __init__(self, A, B, C):
-        """Ax + By + C = 0 and A + B + C = 1
-
-        NOTE: The constructor will ensure A + B + C = 1, the caller need not
-        worry about homogenizing the coordinates.
-        """
-        sums = A + B + C
-        self.A = A / sums
-        self.B = B / sums
-        self.C = C / sums
+        """Ax + By + C = 0 and A + B + C = 1 """
+        self.A = A 
+        self.B = B
+        self.C = C
 
     def side_of_line(self, point):
         """Returns the number 1, 0, -1 if point is on the positive side, on the

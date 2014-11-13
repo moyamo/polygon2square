@@ -50,6 +50,17 @@ class LineSegment:
         x2, y2 = self.points[1]
         return ((x1 + x2) / 2, (y1 + y2) / 2)
 
+    def point_by_length(self, length):
+        """Return a point on the ray points[0] to points[1]  such that the
+        distance from points[0] to the new point is 'length'"""
+        r = self.length()
+        d = length
+        x1, y1 = self.points[0]
+        x2, y2 = self.points[1]
+        x3 = (x2 - x1) * d / r + x1
+        y3 = (y2 - y1) * d / r + y1
+        return (x3, y3)
+
     def to_line(self):
         """Converts this LineSegment into a Line (by extending both ends)
 
@@ -162,7 +173,7 @@ class Triangle:
 
     Several useful operations can be applied to a triangle such as, rotate,
     translate, split across altitude, and rectanglify.
-    
+
     The Triangle (and underlying tuple) should be treated as an immutable
     data structure. All methods return a new triangle and do not modify the
     existing one."""
@@ -170,6 +181,10 @@ class Triangle:
     def __init__(self, tpl):
         """tpl is a 3-tuple of coordinates"""
         self.points = tpl
+
+    def __iter__(self):
+        """Returns the tuple of points"""
+        return iter(self.points)
 
     @property
     def segments(self):
@@ -406,6 +421,22 @@ class Shape:
 
         return self._convex_hull
 
+    def height(self):
+        """Return the height of the rectangle"""
+        a, b, c, d = self.convex_hull()
+        s1 = LineSegment(a, b)
+        s2 = LineSegment(b, c)
+        height = s2 if s1.length() < s2.length() else s1
+        return height
+
+    def width(self):
+        """Return the width of the rectangle"""
+        a, b, c, d = self.convex_hull()
+        s1 = LineSegment(a, b)
+        s2 = LineSegment(b, c)
+        width = s1 if s1.length() < s2.length() else s2
+        return width
+
     def squish_rectangle(self):
         """Return a rectangle of equal area such that height / width < 2"""
         a, b, c, d = self.convex_hull()
@@ -432,3 +463,53 @@ class Shape:
             return Shape(rec1.triangles + rec2.triangles).squish_rectangle()
         else:
             return self
+
+    def square_rectangle(self):
+        """Return a square of equal area to the rectangle. """
+        rect = self.squish_rectangle()
+        a, b, c, d = rect.convex_hull()
+        s1 = LineSegment(a, b)
+        s2 = LineSegment(b, c)
+        if float_eq(s1.length(), s2.length()):
+            return self
+        elif s1.length() < s2.length():
+            a, b, c, d = b, c, d, a
+        s1 = LineSegment(a, b)
+        s2 = LineSegment(b, c)
+        s3 = LineSegment(c, d)
+        s4 = LineSegment(d, a)
+        revs4 = LineSegment(a, d)
+        assert s1.length() > s2.length()
+        square_side = (s1.length() * s2.length())**0.5
+        corner1 = s1.point_by_length(square_side)
+        corner2 = revs4.point_by_length(square_side)
+        cut = LineSegment(b, corner2).to_line()
+        r1, r2 = rect.split(cut)
+        if c in r1.vertices():
+            triangle = r1
+            rest = r2
+        elif c in r2.vertices():
+            triangle = r2
+            rest = r1
+        else:
+            raise Exception("point disappeared")
+
+        cut = s1.to_line().perpendicular(corner1)
+        r1, r2 = rest.split(cut)
+        if a in r1.vertices():
+            rest = r1
+            other_triangle = r2
+        elif a in r2.vertices():
+            rest = r2
+            other_triangle = r1
+        else:
+            raise Exception("point disappeared")
+
+        for p in triangle.convex_hull():
+            if p != b and p != c:
+                anchor = p
+        tri_trans = (corner2[0] - anchor[0], corner2[1] - anchor[1])
+        triangle = triangle.translate(tri_trans)
+        otri_trans = (anchor[0] - b[0], anchor[1] - b[1])
+        other_triangle = other_triangle.translate(otri_trans)
+        return Shape(rest.triangles + triangle.triangles + other_triangle.triangles)

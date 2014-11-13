@@ -206,7 +206,6 @@ class Triangle:
         
         pivot -- A coordinate pair
         rangle -- The angle to rotate by in radians"""
-        print(self.points, pivot, rangle)
         new_points = list()
         px, py = pivot
         for x, y in self.points:
@@ -258,7 +257,7 @@ class Triangle:
         return Shape([t1, t2, t3])
         
     def split(self, line):
-        """Splits the Triangle into two shapes seperated by line.
+        """Splits the Triangle into two shapes separated by line.
 
         All the points of the first shape will be on the non-negative side of
         line. All the points of the second shape will be on the non-positive
@@ -332,7 +331,7 @@ class Shape:
         self._convex_hull = None
     
     def split(self, line):
-        """Splits the Shape into two shapes seperated by line.
+        """Splits the Shape into two shapes separated by line.
 
         All the points of the first shape will be on the non-negative side of
         line. All the points of the second shape will be on the non-positive
@@ -345,6 +344,14 @@ class Shape:
             up.extend(u.triangles)
             down.extend(d.triangles)
         return (Shape(up), Shape(down))
+
+    def translate(self, translation):
+        """Return a new Shape translated by 'translation'"""
+        return Shape([t.translate(translation) for t in self.triangles])
+
+    def rotate(self, pivot, rangle):
+        """Return a new Shape rotate clockwise (by angle) around pivot."""
+        return Shape([t.rotate(pivot, rangle) for t in self.triangles])
     
     def vertices(self):
         """Return vertices inside this shape."""
@@ -358,7 +365,6 @@ class Shape:
                     break
             else:
                 undup.append(v)
-        print('undup: ', undup)
         return undup
     
     def convex_hull(self):
@@ -399,3 +405,30 @@ class Shape:
             self._convex_hull = tuple(hull)
 
         return self._convex_hull
+
+    def squish_rectangle(self):
+        """Return a rectangle of equal area such that height / width < 2"""
+        a, b, c, d = self.convex_hull()
+        s1 = LineSegment(a, b)
+        s2 = LineSegment(b, c)
+        width = s1 if s1.length() < s2.length() else s2
+        height = s2 if s1.length() < s2.length() else s1
+        if height.length() > 2 * width.length():
+            midp = height.midpoint()
+            cut = height.to_line().perpendicular(midp)
+            rec1, rec2 = self.split(cut)
+            h1 = rec1.convex_hull()
+            h2 = rec2.convex_hull()
+            common = None
+            for p in h1:
+                for q in h2:
+                    if float_eq(p[0], q[0]) and float_eq(p[1], q[1]):
+                        common = q
+                        break
+                else:
+                    continue
+                break
+            rec1 = rec1.rotate(common, math.pi)
+            return Shape(rec1.triangles + rec2.triangles).squish_rectangle()
+        else:
+            return self

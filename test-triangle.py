@@ -14,6 +14,7 @@ LINE_MODE = 1
 RIGHT_MODE = 2
 RECT_MODE = 3
 mode = TRIANGLE_MODE
+rectangles = dict()
 
 # A temporary list of points the user placed on the canvas
 points = list()
@@ -39,8 +40,23 @@ def draw_shape(shape):
     for p in shape.convex_hull():
         ex, ey = p
         i = canvas.create_oval((ex - 2, ey - 2, ex + 2, ey + 2))
-        print('oval: ', p)
-    
+        canvas.addtag('point', 'withtag', i)
+
+def draw_rect(shape):
+    ni = canvas.create_polygon(shape.convex_hull(), fill=colors[shape])
+    canvas.addtag('rectangle', 'withtag', ni)
+    canvas.tag_bind(ni, '<Button-1>', squash(ni))
+    rectangles[ni] = shape
+
+def squash(i):
+    def callback(event):
+        shape = rectangles[i]
+        squish = shape.squish_rectangle()
+        del rectangles[i]
+        canvas.delete(i)
+        draw_shape(squish)
+    return callback
+
 
 def add_point(event):
     """Adds a point to the canvas. If there are three loose points, they will
@@ -101,7 +117,7 @@ def rotate_triangle(i):
             s = triangles[i].to_rectangle()
             del triangles[i]
             canvas.delete(i)
-            draw_shape(s)
+            draw_rect(s)
         else:
             new_tri = triangles[i].rotate(global_pivot, rotate.get() * math.pi / 180)
             print(rotate.get() * math.pi / 180)
@@ -115,7 +131,9 @@ def clear_canvas():
     points = list()
     triangles = dict()
     global_pivot = None
+    rectangles = dict()
     canvas.delete('triangle', 'point', 'line')
+    canvas.delete('triangle', 'point', 'line', 'rectangle')
 
 def set_state(state):
     global mode

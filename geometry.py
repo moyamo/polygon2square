@@ -17,26 +17,14 @@ def line_intersects_segment(line, line_segment):
     This function is useful for splitting polygons by a straight line.
     """
 
-    def between(x, a, b):
-        """Returns true if x is between a and b (inclusive)"""
-        s = min(a, b)
-        t = max(a, b)
-        if s <= x <= t:
-            return True
-        else:
-            return False
-
     linesegform = line_segment.to_line()
     if line.is_parallel_to(linesegform):
         return None
     else:
-        x, y = line.intersection(linesegform)
-        p1, p2 = line_segment.points
-        x1, y1 = p1
-        x2, y2 = p2
+        p = line.intersection(linesegform)
         # Is the intersection on the line_segment?
-        if between(x, x1, x2) and between(y, y1, y2):
-            return (x, y)
+        if line_segment.between(p):
+            return p
         else:
             return None
 
@@ -77,13 +65,36 @@ class LineSegment:
         line = Line(A, B, C)
         return line
     
+    def between(self, point):
+        """Return True if point is between the LineSegment.
+        
+        A point is between a line segment if it is between the x and y values
+        that bound the segment. The point need not lie on the segment.
+        To check if a point lies on a LineSegment use to_line and
+        Line.side_of_line
+        """
+        def btw(x, a, b):
+            """Returns true if x is between a and b (inclusive)"""
+            s = min(a, b)
+            t = max(a, b)
+            if s <= x <= t:
+                return True
+            else:
+                return False
+
+        x, y = point
+        x1, y1 = self.points[0]
+        x2, y2 = self.points[1]
+        return btw(x, x1, x2) and btw(y, y1, y2)
+    
 class Line:
     """A straight line
     
     Represents a straight line as (A, B, C) where Ax + By + C = 0.
-    The line is not normalised (I haven't found an elegent way to do this)
+    The line is not normalised (I haven't found an elegant way to do this)
 
-    Should be treated as an immutable data structure.
+    Should be treated as an immutable data structure. However it is not
+    internally so, and utilises caching.
     """
     def __init__(self, A, B, C):
         """Ax + By + C = 0 and A + B + C = 1 """
@@ -317,6 +328,7 @@ class Shape:
     def __init__(self, triangle_list):
         """triangle_list is a list of triangles"""
         self.triangles = triangle_list
+        self._convex_hull = None
     
     def split(self, line):
         """Splits the Shape into two shapes seperated by line.
@@ -332,3 +344,57 @@ class Shape:
             up.extend(u.triangles)
             down.extend(d.triangles)
         return (Shape(up), Shape(down))
+    
+    def vertices(self):
+        """Return vertices inside this shape."""
+        vertices = list()
+        for t in self.triangles:
+            vertices.extend(t.points)
+        undup = list()
+        for v in vertices:
+            for u in undup:
+                if float_eq(u[0], v[0]) and float_eq(u[1], v[1]):
+                    break
+            else:
+                undup.append(v)
+        print('undup: ', undup)
+        return undup
+    
+    def convex_hull(self):
+        """Return the convex hull of the shape.
+        
+        At the moment this uses a brute-force algorithm (but caches) that runs
+        in O(V^3) where V is the number of vertices.
+        """
+        if self._convex_hull is None:
+            verts = self.vertices()
+            if len(verts) == 0:
+                self._convex_hull = []
+                return self._convex_hull
+            hull = list()
+            last_hull = min(verts)
+            hull.append(last_hull)
+            while True:
+                old_last = last_hull
+                for b in verts:
+                    if b in hull:
+                        continue
+                    seg = LineSegment(last_hull, b)
+                    s = seg.to_line()
+                    cur = None
+                    for c in verts:
+                        sidish = s.side_of_line(c)
+                        if sidish == 0 and not seg.between(c):
+                            break
+                        elif cur == None and sidish != 0:
+                            cur = sidish
+                        elif cur != sidish and sidish != 0:
+                            break
+                    else:
+                        hull.append(b)
+                        last_hull = b
+                if old_last == last_hull:
+                    break
+            self._convex_hull = tuple(hull)
+
+        return self._convex_hull

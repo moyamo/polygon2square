@@ -278,7 +278,8 @@ class Triangle:
             inverse = [None for i in range(3)]
             for i, s in enumerate(sides):
                 inverse[s % 3] = self.points[i]
-            basepoint = line.intersection(inverse[1], inverse[2])
+            base = LineSegment(inverse[1], inverse[2])
+            basepoint = line_intersects_segment(line, base)
             pos_shape = Triangle((basepoint, inverse[0], inverse[1]))
             neg_shape = Triangle((basepoint, inverse[0], inverse[2]))
             return (Shape([pos_shape]), Shape([neg_shape]))
@@ -306,12 +307,12 @@ class Triangle:
                 t1 = Triangle((sided_points[0][0], intersects[0], intersects[1]))
                 t2 = Triangle((sided_points[1][0], intersects[0], intersects[1]))
                 t3 = Triangle((sided_points[1][0], sided_points[1][1], intersects[0]))
-                return (Shape([t1]), Shape([t2, t3]))
+                return (Shape([t2, t3]), Shape([t1]))
             elif len(sided_points[1]) == 1:
                 t1 = Triangle((sided_points[1][0], intersects[0], intersects[1]))
                 t2 = Triangle((sided_points[0][0], intersects[0], intersects[1]))
                 t3 = Triangle((sided_points[0][0], sided_points[0][1], intersects[0]))
-                return (Shape([t2, t3]), Shape([t1]))
+                return (Shape([t1]), Shape([t2, t3]))
             else:
                 raise Exception("Segments missing")
 

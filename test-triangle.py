@@ -36,6 +36,11 @@ def draw_shape(shape):
     tris = shape.triangles
     for t in tris:
         make_triangle(t)
+    for p in shape.convex_hull():
+        ex, ey = p
+        i = canvas.create_oval((ex - 2, ey - 2, ex + 2, ey + 2))
+        print('oval: ', p)
+    
 
 def add_point(event):
     """Adds a point to the canvas. If there are three loose points, they will

@@ -5,10 +5,11 @@ import math
 def float_eq(a, b):
     """Check if two floats are equal within a certain accuracy."""
     epsilon = 2**(-30)
-    if abs(a - b) < epsilon:
-        return True
-    else:
-        return False
+    return abs(a - b) < epsilon
+
+def point_eq(a, b):
+    """Check if two points are equal within a certain accuracy."""
+    return float_eq(a[0], b[0]) and float_eq(a[1], b[1])
 
 def line_intersects_segment(line, line_segment):
     """Returns the intersection the Line and LineSegment or None if they do
@@ -376,7 +377,7 @@ class Shape:
         undup = list()
         for v in vertices:
             for u in undup:
-                if float_eq(u[0], v[0]) and float_eq(u[1], v[1]):
+                if point_eq(u, v):
                     break
             else:
                 undup.append(v)
@@ -473,6 +474,7 @@ class Shape:
         if float_eq(s1.length(), s2.length()):
             return self
         elif s1.length() < s2.length():
+            # Ensure s1 is height and s2 is width
             a, b, c, d = b, c, d, a
         s1 = LineSegment(a, b)
         s2 = LineSegment(b, c)
@@ -485,29 +487,30 @@ class Shape:
         corner2 = revs4.point_by_length(square_side)
         cut = LineSegment(b, corner2).to_line()
         r1, r2 = rect.split(cut)
-        if c in r1.vertices():
+        if len(r1.convex_hull()) == 3:
             triangle = r1
             rest = r2
-        elif c in r2.vertices():
+        elif len(r2.convex_hull()) == 3:
             triangle = r2
             rest = r1
         else:
-            raise Exception("point disappeared")
+            raise Exception("Bad cut")
 
         cut = s1.to_line().perpendicular(corner1)
         r1, r2 = rest.split(cut)
-        if a in r1.vertices():
-            rest = r1
-            other_triangle = r2
-        elif a in r2.vertices():
+        if len(r1.convex_hull()) == 3:
             rest = r2
             other_triangle = r1
+        elif len(r2.convex_hull()) == 3:
+            rest = r1
+            other_triangle = r2
         else:
-            raise Exception("point disappeared")
+            raise Exception("Bad cut")
 
         for p in triangle.convex_hull():
-            if p != b and p != c:
+            if not point_eq(p, b) and not point_eq(p, c):
                 anchor = p
+
         tri_trans = (corner2[0] - anchor[0], corner2[1] - anchor[1])
         triangle = triangle.translate(tri_trans)
         otri_trans = (anchor[0] - b[0], anchor[1] - b[1])

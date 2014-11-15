@@ -516,3 +516,12 @@ class Shape:
         otri_trans = (anchor[0] - b[0], anchor[1] - b[1])
         other_triangle = other_triangle.translate(otri_trans)
         return Shape(rest.triangles + triangle.triangles + other_triangle.triangles)
+
+    def orientate(self):
+        """Rotates the shape so that the first segment in the convex hull is
+        parralell to the x-axis."""
+        hull = self.convex_hull()
+        x1, y1 = hull[0]
+        x2, y2 = hull[1]
+        xd, yd = x1 - x2, y1 - y2
+        return self.rotate(hull[1], math.atan2(yd, xd))

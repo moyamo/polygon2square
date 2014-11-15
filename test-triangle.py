@@ -43,17 +43,18 @@ def draw_shape(shape):
         canvas.addtag('point', 'withtag', i)
 
 def draw_rect(shape):
-    ni = canvas.create_polygon(shape.convex_hull(), fill=colors[shape])
-    canvas.addtag('rectangle', 'withtag', ni)
-    canvas.tag_bind(ni, '<Button-1>', squash(ni))
-    rectangles[ni] = shape
+    listi = []
+    for t in shape.triangles:
+        listi.append(make_triangle(t))
+    rectangles[shape] = listi
 
-def squash(i):
+def squash(shape):
     def callback(event):
-        shape = rectangles[i]
+        iss = rectangles[shape]
         squish = shape.squish_rectangle()
-        del rectangles[i]
-        canvas.delete(i)
+        del rectangles[shape]
+        for i in iss:
+            canvas.delete(i)
         draw_shape(squish)
     return callback
 
@@ -104,6 +105,7 @@ def make_triangle(tri):
     canvas.addtag('triangle', 'withtag', ni)
     canvas.tag_bind(ni, '<Button-1>', rotate_triangle(ni))
     triangles[ni] = tri
+    return ni
 
 def rotate_triangle(i):
     def rotate_tri(event):
@@ -127,7 +129,7 @@ def rotate_triangle(i):
     return rotate_tri
 
 def clear_canvas():
-    global points, triangles, global_pivot
+    global points, triangles, global_pivot, rectangles
     points = list()
     triangles = dict()
     global_pivot = None
@@ -138,6 +140,17 @@ def clear_canvas():
 def set_state(state):
     global mode
     mode = state
+
+def square_rects():
+    global rectangles
+    squares = list()
+    for r, iss in rectangles.items():
+        squares.append(r.square_rectangle())
+        for i in iss:
+            canvas.delete(i)
+    rectangles = dict()
+    for s in squares:
+        draw_rect(s)
 
 root = Tk()
 frame = ttk.Frame(root)
@@ -153,6 +166,7 @@ clear = ttk.Button(frame, text='Clear', command = clear_canvas)
 cutLine = ttk.Button(frame, text='Cut By Line', command = lambda : set_state(LINE_MODE))
 right_angle = ttk.Button(frame, text='Right-angle', command = lambda : set_state(RIGHT_MODE))
 rectangle = ttk.Button(frame, text='Rectangle', command = lambda : set_state(RECT_MODE))
+square = ttk.Button(frame, text='Square', command = square_rects)
 
 frame.grid()
 canvas.grid()
@@ -162,4 +176,5 @@ clear.grid()
 cutLine.grid()
 right_angle.grid()
 rectangle.grid()
+square.grid()
 root.mainloop()

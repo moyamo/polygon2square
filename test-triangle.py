@@ -152,6 +152,16 @@ def square_rects():
     for s in squares:
         draw_rect(s)
 
+def orientate_shapes():
+    global rectangles
+    new_rect = (r.orientate() for r in rectangles)
+    for iss in rectangles.values():
+        for i in iss:
+            canvas.delete(i)
+    rectangles = dict()
+    for r in new_rect:
+        draw_rect(r)
+
 root = Tk()
 frame = ttk.Frame(root)
 canvas = Canvas(frame, width=canvas_height*PHI, height=canvas_height)
@@ -167,6 +177,7 @@ cutLine = ttk.Button(frame, text='Cut By Line', command = lambda : set_state(LIN
 right_angle = ttk.Button(frame, text='Right-angle', command = lambda : set_state(RIGHT_MODE))
 rectangle = ttk.Button(frame, text='Rectangle', command = lambda : set_state(RECT_MODE))
 square = ttk.Button(frame, text='Square', command = square_rects)
+orientate = ttk.Button(frame, text='Orientate', command = orientate_shapes)
 
 frame.grid()
 canvas.grid()
@@ -177,4 +188,5 @@ cutLine.grid()
 right_angle.grid()
 rectangle.grid()
 square.grid()
+orientate.grid()
 root.mainloop()

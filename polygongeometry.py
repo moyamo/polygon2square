@@ -40,21 +40,30 @@ class FrameList:
         last = self._polygon2triangles()
         yield last
         new_last = list()
+        # Turn all triangles to right-angled triangles
         while len(last) > 0:
             t = last.pop()
             new_last.extend(t.to_rightangle())
             yield new_last + last
+
+        # Turn all right-angled triangles to rectangles
         last, new_last = new_last, list()
         while len(last) > 0:
             t = last.pop()
-            new_last.append(t.to_rectangle())
-            yield new_last + last
+            new_last.append(None)
+            for t in triangle2rectangle(t):
+                new_last.pop()
+                new_last.append(t)
+                yield new_last + last
+
+        # Turn all rectangles to squares
         last, new_last = new_last, list()
         while len(last) > 0:
             s = last.pop()
             new_last.append(s.square_rectangle())
             yield new_last + last
 
+        # Merge all squares
         last, new_last = new_last, list()
         while len(last) > 1:
             r, s = last.pop(), last.pop()
@@ -63,3 +72,29 @@ class FrameList:
             t = (50 - p[0], 50 - p[1])
             last.append(q.translate(t))
             yield last
+
+def triangle2rectangle(tri):
+    """Turns a right angle triangle into a rectangle (Shape).
+    
+    This function is a generator function that generates a Shape for every step
+    needed to turn the triangle into a rectangle.
+    """
+
+    p = tri.points
+    # The point at right angle
+    right = tri.largest_angle()
+    assert float_eq(tri.angle(right), math.pi / 2)
+    other = [(right + 1) % 3, (right + 2) % 3]
+    hyp = tri.segments[right]
+    base = tri.segments[other[0]]
+    height = tri.segments[other[1]]
+    # We will cut the triangle at the midpoint of the height
+    midp = height.midpoint()
+    rect_side = base.to_line().parallel(midp)
+    other_point = line_intersects_segment(rect_side, hyp)
+    t1 = Triangle((p[other[0]], midp, other_point))
+    t2 = Triangle((p[right], p[other[1]], midp))
+    t3 = Triangle((p[other[1]], midp, other_point))
+    yield Shape([t1, t2, t3])
+    t1 = t1.rotate(other_point, math.pi)
+    yield Shape([t1, t2, t3])

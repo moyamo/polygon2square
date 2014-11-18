@@ -24,7 +24,6 @@ class FrameList:
                 self._cache.append(f)
             except StopIteration:
                 raise IndexError('FrameList index out of bounds')
-        print(self._cache[i])
         return self._cache[i]
 
     def _polygon2triangles(self):
@@ -71,7 +70,12 @@ class FrameList:
         last, new_last = new_last, list()
         while len(last) > 1:
             r, s = last.pop(), last.pop()
-            q = s.merge_square(r)
+            last.append(None)
+            for s in merge_squares(s, r):
+                last.pop()
+                last.append(s)
+                yield last[:]
+            q = last.pop()
             p = q.convex_hull()[0]
             t = (50 - p[0], 50 - p[1])
             last.append(q.translate(t))
@@ -197,3 +201,66 @@ def rectangle2square(rectangle):
     other_triangle = other_triangle.translate(otri_trans)
     yield Shape(rest.triangles + triangle.triangles + other_triangle.triangles)
 
+
+def merge_squares(self, square):
+    """Takes this square and another square and returns a bigger square of
+    equal area."""
+    # Make sure it's a square
+    s1, s2 = self.orientate(), square.orientate()
+    yield Shape(s1.triangles + s2.triangles)
+
+    assert float_eq(s1.height().length(), s1.width().length())
+    assert float_eq(s2.height().length(), s2.width().length())
+
+    tmp = s1 if s1.height().length() > s2.height().length() else s2
+    s2 = s2 if s1.height().length() > s2.height().length() else s1
+    s1 = tmp
+
+    right_most = sorted(s1.convex_hull(), key=cmp_to_key(point_cmp))[3]
+    left_most =  sorted(s2.convex_hull(), key=cmp_to_key(point_cmp))[1]
+
+    t = (right_most[0] - left_most[0], right_most[1] - left_most[1])
+    s2 = s2.translate(t)
+    yield Shape(s1.triangles + s2.triangles)
+
+    a1, b1, c1, d1 = sorted(s1.convex_hull(), key=cmp_to_key(point_cmp))
+    a2, b2, c2, d2 = sorted(s2.convex_hull(), key=cmp_to_key(point_cmp))
+    l1 = s1.height().length()
+    l2 = s2.height().length()
+    cut_point = (b1[0] + l2, b1[1])
+    cut1 = LineSegment(a1, cut_point).to_line()
+    cut2 = LineSegment(c2, cut_point).to_line()
+    combined = Shape(s1.triangles + s2.triangles)
+    ns1, ns2 = combined.split(cut1)
+
+    if len(ns1.convex_hull()) == 3:
+        triangle = ns1
+        rest = ns2
+    elif len(ns2.convex_hull()) == 3:
+        triangle = ns2
+        rest = ns1
+    else:
+        raise Exception("Bad cut" + str(ns1.convex_hull()) + str(ns2.convex_hull()))
+    
+    yield Shape(triangle.triangles + rest.triangles)
+
+    triangle = triangle.rotate(a1, math.pi / 2)
+    combined = Shape(triangle.triangles + rest.triangles)
+    yield(combined)
+
+    ns1, ns2 = combined.split(cut2)
+
+    if len(ns1.convex_hull()) == 3:
+        triangle = ns1
+        rest = ns2
+    elif len(ns2.convex_hull()) == 3:
+        triangle = ns2
+        rest = ns1
+    else:
+        raise Exception("Bad cut" + str(ns1.convex_hull()) + str(ns2.convex_hull()))
+
+    yield Shape(triangle.triangles + rest.triangles)
+    
+    triangle = triangle.rotate(c2, math.pi / 2 * 3)
+    combined = Shape(triangle.triangles + rest.triangles)
+    yield combined

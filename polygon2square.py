@@ -7,7 +7,7 @@ from collections import defaultdict
 import polygongeometry as pg
 
 PHI = (1 + 5**0.5) / 2
-canvas_height = 400
+canvas_height = 500
 
 # A list of points the user placed on the canvas
 points = list()

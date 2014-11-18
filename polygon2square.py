@@ -13,8 +13,8 @@ canvas_height = 400
 points = list()
 last_line = None
 
-# This list contains each frame of turning the polygon into a square
-frames = list()
+# A frame list for converting this polygon into a square
+frames = None
 
 def add_point(event):
     """Adds a point to the 'points' list and draw it on the canvas"""
@@ -64,7 +64,7 @@ def draw_shapes(shapes):
             draw_triangle(s)
         elif isinstance(s, pg.Shape):
             for t in s.triangles:
-                draw_triangle(s)
+                draw_triangle(t)
         else:
             raise Exception("List may only contain shapes and triangles")
 
@@ -82,24 +82,17 @@ def enable_controls():
 
 def squarify_polygon(*args):
     """Takes the polygon, triangulates it and enables the controls"""
-    T = pg.polygon2triangles(points)
+    global frames
+    frames = pg.FrameList(points)
     clear_canvas()
-    frames.append(T)
     enable_controls()
     jump_to_position(0)
 
-def step_forward():
-    """Draws the next step in turing polygon into a square"""
-
-def step_backwards():
-    """Draws the previous step in turing polygon into a square"""
-
 def jump_to_position(pos):
     """Jump to the position (-1 for final position)"""
-    if pos < len(frames):
-        clear_canvas()
-        draw_shapes(frames[pos])
-        position.set(str(pos))
+    clear_canvas()
+    draw_shapes(frames[pos])
+    position.set(str(pos))
 
 root = Tk()
 
@@ -124,11 +117,12 @@ clear.grid(column=0, row=1, sticky=(N, W, E))
 controlsframe = ttk.Frame(buttonframe)
 controlsframe.grid(column=0, row=2, sticky = (W, E))
 
-start = ttk.Button(controlsframe, text='<<', command = lambda  : jump_to_position(0), width=2)
+start = ttk.Button(controlsframe, text='<<', command = lambda : jump_to_position(0), width=2)
 start.state(['disabled'])
 start.grid(column=0, row=0, sticky = (N, S, W, E))
 
-stepback = ttk.Button(controlsframe, text='|<', command = step_backwards, width=2)
+stepback = ttk.Button(controlsframe, text='|<',
+        command = lambda : jump_to_position(int(position.get()) - 1), width=2)
 stepback.state(['disabled'])
 stepback.grid(column=1, row=0, sticky = (N, S, W, E))
 
@@ -139,7 +133,8 @@ poslabel.state(['disabled'])
 poslabel.bind('<Return>', lambda x : jump_to_position(int(position.get())))
 poslabel.grid(column=2, row = 0,  sticky = (N, S, W, E))
 
-stepforward = ttk.Button(controlsframe, text='>|', command = step_forward, width=2)
+stepforward = ttk.Button(controlsframe, text='>|',
+        command = lambda : jump_to_position(int(position.get()) + 1), width=2)
 stepforward.state(['disabled'])
 stepforward.grid(column=3, row=0, sticky = (W, E, N, S))
 

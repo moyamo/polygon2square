@@ -26,6 +26,39 @@ def point_cmp(a, b):
     else:
         return 1
 
+def clockwise_from(p0, p1, p2):
+    """Returns a value > 0 if p1 is clockwise of p2 from p0, < 0 if counter
+    clockwise and == 0 if collinear"""
+    x1, y1 = p1[0] - p0[0], p1[1] - p0[1]
+    x2, y2 = p2[0] - p0[0], p2[1] - p0[1]
+    ans = x1*y2 - x2*y1
+    if float_eq(ans, 0):
+        return 0
+    elif ans < 0:
+        return -1
+    else:
+        return 1
+
+
+def clockwise_and_dist(p0, p1, p2):
+    """Returns a value > 0 if p1 is clockwise of p2 from p0, < 0 if counter
+    clockwise, if the points are collinear it will return 1 if p2 is further
+    from p0 than p1 and -1 if p2 is closer to p0 than p1"""
+    a = clockwise_from(p0, p1, p2)
+    if a == 0:
+        dist1 = LineSegment(p0, p1).length()
+        dist2 = LineSegment(p0, p2).length()
+        if float_eq(dist1, dist2):
+            return 0
+        elif dist1 < dist2:
+            return -1
+        else:
+            return 1
+    else:
+        return a
+        
+
+
 def line_intersects_segment(line, line_segment):
     """Returns the intersection the Line and LineSegment or None if they do
     not intersect.
@@ -407,40 +440,30 @@ class Shape:
     def convex_hull(self):
         """Return the convex hull of the shape.
         
-        At the moment this uses a brute-force algorithm (but caches) that runs
-        in O(V^3) where V is the number of vertices.
+        This uses grahams algorithm [O(V log V)] and caches the result inside
+        self._convex_hull .
         """
-        if self._convex_hull is None:
-            verts = self.vertices()
-            if len(verts) == 0:
-                self._convex_hull = []
-                return self._convex_hull
-            hull = list()
-            last_hull = min(verts)
-            hull.append(last_hull)
-            while True:
-                old_last = last_hull
-                for b in verts:
-                    if b in hull:
-                        continue
-                    seg = LineSegment(last_hull, b)
-                    s = seg.to_line()
-                    cur = None
-                    for c in verts:
-                        sidish = s.side_of_line(c)
-                        if sidish == 0 and not seg.between(c):
-                            break
-                        elif cur == None and sidish != 0:
-                            cur = sidish
-                        elif cur != sidish and sidish != 0:
-                            break
-                    else:
-                        hull.append(b)
-                        last_hull = b
-                if old_last == last_hull:
-                    break
-            self._convex_hull = tuple(hull)
-
+        verts = self.vertices()
+        if len(verts) == 0:
+            self._convex_hull = []
+        elif self._convex_hull is None:
+            p = min(verts, key=cmp_to_key(point_cmp))
+            verts.remove(p)
+            ps = sorted(verts, key=cmp_to_key(partial(clockwise_and_dist, p)))
+            ps.append(p)
+            hull = [p, ps[0]]
+            i = 1
+            while clockwise_from(hull[0], hull[1], ps[i]) >= 0:
+                hull.pop()
+                hull.append(ps[i])
+                i += 1
+            hull.append(ps[i])
+            for l in ps[i:]:
+                while clockwise_from(hull[-2], hull[-1], l) >= 0:
+                    hull.pop()
+                hull.append(l)
+            hull.pop()
+            self._convex_hull = hull
         return self._convex_hull
 
     def height(self):

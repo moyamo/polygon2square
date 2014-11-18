@@ -2,6 +2,9 @@
 
 from tkinter import *
 from tkinter import ttk
+from random import randint
+from collections import defaultdict
+import polygongeometry as pg
 
 PHI = (1 + 5**0.5) / 2
 canvas_height = 400
@@ -9,6 +12,9 @@ canvas_height = 400
 # A list of points the user placed on the canvas
 points = list()
 last_line = None
+
+# This list contains each frame of turning the polygon into a square
+frames = list()
 
 def add_point(event):
     """Adds a point to the 'points' list and draw it on the canvas"""
@@ -37,28 +43,63 @@ def add_point(event):
         last_line = canvas.create_line((x1, y1, x2, y2))
         canvas.addtag('line', 'withtag', last_line)
 
-def step_forward():
-    """Draws the next step in turing polygon into a square"""
+_triangle_color = defaultdict(lambda : randint(0, 0xFFFFFF))
+def triangle_color(tri):
+    """Return the color of the triangle.
+    
+    If the triangle has no color, assign it a random color.
+    """
+    color = _triangle_color[tri]
+    return '#' + hex(color)[2:].rjust(6, '0')
 
-def step_backwards():
-    """Draws the previous step in turing polygon into a square"""
+def draw_triangle(tri):
+    """Take a triangle and draws it on the canvas"""
+    i = canvas.create_polygon(tri.points, fill=triangle_color(tri))
+    canvas.addtag('triangle', 'withtag', i)
+
+def draw_shapes(shapes):
+    """Take a list of Shapes or Triangles and draws it on the canvas."""
+    for s in shapes:
+        if isinstance(s, pg.Triangle):
+            draw_triangle(s)
+        elif isinstance(s, pg.Shape):
+            for t in s.triangles:
+                draw_triangle(s)
+        else:
+            raise Exception("List may only contain shapes and triangles")
 
 def clear_canvas():
     """Deletes the current polygon from the canvas."""
     global points
     # Delete all points
     points = list()
-    # Clear lines and points from the canvas
-    canvas.delete('line', 'point')
+    # Clear lines, points and triangles from the canvas
+    canvas.delete('line', 'point', 'triangle')
 
+def enable_controls():
+    for c in controlsframe.winfo_children():
+        c.state(['!disabled'])
 
 def squarify_polygon(*args):
-    """Turns the polygon into a square"""
-    print('Squarify')
+    """Takes the polygon, triangulates it and enables the controls"""
+    T = pg.polygon2triangles(points)
+    clear_canvas()
+    frames.append(T)
+    enable_controls()
+    jump_to_position(0)
+
+def step_forward():
+    """Draws the next step in turing polygon into a square"""
+
+def step_backwards():
+    """Draws the previous step in turing polygon into a square"""
 
 def jump_to_position(pos):
     """Jump to the position (-1 for final position)"""
-    print('Jump to: ' +  str(pos))
+    if pos < len(frames):
+        clear_canvas()
+        draw_shapes(frames[pos])
+        position.set(str(pos))
 
 root = Tk()
 
@@ -83,7 +124,7 @@ clear.grid(column=0, row=1, sticky=(N, W, E))
 controlsframe = ttk.Frame(buttonframe)
 controlsframe.grid(column=0, row=2, sticky = (W, E))
 
-start = ttk.Button(controlsframe, text='<<', command = lambda x : jump_to_position(0), width=2)
+start = ttk.Button(controlsframe, text='<<', command = lambda  : jump_to_position(0), width=2)
 start.state(['disabled'])
 start.grid(column=0, row=0, sticky = (N, S, W, E))
 
@@ -102,7 +143,7 @@ stepforward = ttk.Button(controlsframe, text='>|', command = step_forward, width
 stepforward.state(['disabled'])
 stepforward.grid(column=3, row=0, sticky = (W, E, N, S))
 
-start = ttk.Button(controlsframe, text='>>', command = lambda x : jump_to_position(-1), width=2)
+start = ttk.Button(controlsframe, text='>>', command = lambda : jump_to_position(-1), width=2)
 start.state(['disabled'])
 start.grid(column=4, row=0, sticky = (N, S, W, E))
 

@@ -307,25 +307,6 @@ class Triangle:
         t2 =  Triangle((p[big_point], new_point, p[other_points[1]]))
         return (t1, t2)
         
-    def to_rectangle(self):
-        """Turns a right angle triangle into a rectangle (Shape)"""
-        p = self.points
-        # The point at right angle
-        right = self.largest_angle()
-        assert float_eq(self.angle(right), math.pi / 2)
-        other = [(right + 1) % 3, (right + 2) % 3]
-        hyp = self.segments[right]
-        base = self.segments[other[0]]
-        height = self.segments[other[1]]
-        # We will cut the triangle at the midpoint of the height
-        midp = height.midpoint()
-        rect_side = base.to_line().parallel(midp)
-        other_point = line_intersects_segment(rect_side, hyp)
-        t1 = Triangle((p[other[0]], midp, other_point)).rotate(other_point, math.pi)
-        t2 = Triangle((p[right], p[other[1]], midp))
-        t3 = Triangle((p[other[1]], midp, other_point))
-        return Shape([t1, t2, t3])
-        
     def split(self, line):
         """Splits the Triangle into two shapes separated by line.
 
@@ -399,7 +380,7 @@ class Shape:
         """triangle_list is a list of triangles"""
         self.triangles = triangle_list
         self._convex_hull = None
-    
+
     def split(self, line):
         """Splits the Shape into two shapes separated by line.
 
@@ -481,85 +462,6 @@ class Shape:
         s2 = LineSegment(b, c)
         width = s1 if s1.length() < s2.length() else s2
         return width
-
-    def squish_rectangle(self):
-        """Return a rectangle of equal area such that height / width < 2"""
-        a, b, c, d = self.convex_hull()
-        s1 = LineSegment(a, b)
-        s2 = LineSegment(b, c)
-        width = s1 if s1.length() < s2.length() else s2
-        height = s2 if s1.length() < s2.length() else s1
-        if height.length() > 2 * width.length():
-            midp = height.midpoint()
-            cut = height.to_line().perpendicular(midp)
-            rec1, rec2 = self.split(cut)
-            h1 = rec1.convex_hull()
-            h2 = rec2.convex_hull()
-            common = None
-            for p in h1:
-                for q in h2:
-                    if float_eq(p[0], q[0]) and float_eq(p[1], q[1]):
-                        common = q
-                        break
-                else:
-                    continue
-                break
-            rec1 = rec1.rotate(common, math.pi)
-            return Shape(rec1.triangles + rec2.triangles).squish_rectangle()
-        else:
-            return self
-
-    def square_rectangle(self):
-        """Return a square of equal area to the rectangle. """
-        rect = self.squish_rectangle()
-        a, b, c, d = rect.convex_hull()
-        s1 = LineSegment(a, b)
-        s2 = LineSegment(b, c)
-        if float_eq(s1.length(), s2.length()):
-            return self
-        elif s1.length() < s2.length():
-            # Ensure s1 is height and s2 is width
-            a, b, c, d = b, c, d, a
-        s1 = LineSegment(a, b)
-        s2 = LineSegment(b, c)
-        s3 = LineSegment(c, d)
-        s4 = LineSegment(d, a)
-        revs4 = LineSegment(a, d)
-        assert s1.length() > s2.length()
-        square_side = (s1.length() * s2.length())**0.5
-        corner1 = s1.point_by_length(square_side)
-        corner2 = revs4.point_by_length(square_side)
-        cut = LineSegment(b, corner2).to_line()
-        r1, r2 = rect.split(cut)
-        if len(r1.convex_hull()) == 3:
-            triangle = r1
-            rest = r2
-        elif len(r2.convex_hull()) == 3:
-            triangle = r2
-            rest = r1
-        else:
-            raise Exception("Bad cut")
-
-        cut = s1.to_line().perpendicular(corner1)
-        r1, r2 = rest.split(cut)
-        if len(r1.convex_hull()) == 3:
-            rest = r2
-            other_triangle = r1
-        elif len(r2.convex_hull()) == 3:
-            rest = r1
-            other_triangle = r2
-        else:
-            raise Exception("Bad cut")
-
-        for p in triangle.convex_hull():
-            if not point_eq(p, b) and not point_eq(p, c):
-                anchor = p
-
-        tri_trans = (corner2[0] - anchor[0], corner2[1] - anchor[1])
-        triangle = triangle.translate(tri_trans)
-        otri_trans = (anchor[0] - b[0], anchor[1] - b[1])
-        other_triangle = other_triangle.translate(otri_trans)
-        return Shape(rest.triangles + triangle.triangles + other_triangle.triangles)
 
     def orientate(self):
         """Rotates the shape so that the first segment in the convex hull is

@@ -53,7 +53,7 @@ class FrameList:
             t = last.pop()
             new_last.append(None)
             for t in triangle2rectangle(t):
-                new_last.pop()
+                a = new_last.pop()
                 new_last.append(t)
                 yield new_last + last
 
@@ -61,8 +61,11 @@ class FrameList:
         last, new_last = new_last, list()
         while len(last) > 0:
             s = last.pop()
-            new_last.append(s.square_rectangle())
-            yield new_last + last
+            new_last.append(None)
+            for r in rectangle2square(s):
+                new_last.pop()
+                new_last.append(r)
+                yield new_last + last
 
         # Merge all squares
         last, new_last = new_last, list()
@@ -98,3 +101,99 @@ def triangle2rectangle(tri):
     yield Shape([t1, t2, t3])
     t1 = t1.rotate(other_point, math.pi)
     yield Shape([t1, t2, t3])
+
+def squish_rectangle(self):
+    """Return a rectangle of equal area such that height / width < 2"""
+    a, b, c, d = self.convex_hull()
+    s1 = LineSegment(a, b)
+    s2 = LineSegment(b, c)
+    width = s1 if s1.length() < s2.length() else s2
+    height = s2 if s1.length() < s2.length() else s1
+    if height.length() > 2 * width.length():
+        midp = height.midpoint()
+        cut = height.to_line().perpendicular(midp)
+        rec1, rec2 = self.split(cut)
+        yield Shape(rec1.triangles + rec2.triangles)
+        h1 = rec1.convex_hull()
+        h2 = rec2.convex_hull()
+        common = None
+        for p in h1:
+            for q in h2:
+                if float_eq(p[0], q[0]) and float_eq(p[1], q[1]):
+                    common = q
+                    break
+            else:
+                continue
+            break
+        rec1 = rec1.rotate(common, math.pi)
+        s = Shape(rec1.triangles + rec2.triangles)
+        yield s
+        for t in squish_rectangle(s):
+            yield t
+    else:
+        yield self
+
+
+def rectangle2square(rectangle):
+    """Return a square of equal area to the rectangle. """
+    rect = squish_rectangle(rectangle)
+    last = None
+    for t in rect:
+        if last is not None:
+            yield last
+        last = t
+    rect = last
+    a, b, c, d = rect.convex_hull()
+    s1 = LineSegment(a, b)
+    s2 = LineSegment(b, c)
+    if float_eq(s1.length(), s2.length()):
+        yield self
+    elif s1.length() < s2.length():
+        # Ensure s1 is height and s2 is width
+        a, b, c, d = b, c, d, a
+    s1 = LineSegment(a, b)
+    s2 = LineSegment(b, c)
+    s3 = LineSegment(c, d)
+    s4 = LineSegment(d, a)
+    revs4 = LineSegment(a, d)
+    assert s1.length() > s2.length()
+    square_side = (s1.length() * s2.length())**0.5
+    corner1 = s1.point_by_length(square_side)
+    corner2 = revs4.point_by_length(square_side)
+    cut = LineSegment(b, corner2).to_line()
+    r1, r2 = rect.split(cut)
+    if len(r1.convex_hull()) == 3:
+        triangle = r1
+        rest = r2
+    elif len(r2.convex_hull()) == 3:
+        triangle = r2
+        rest = r1
+    else:
+        raise Exception("Bad cut")
+
+    yield Shape(triangle.triangles + rest.triangles)
+
+    cut = s1.to_line().perpendicular(corner1)
+    r1, r2 = rest.split(cut)
+    if len(r1.convex_hull()) == 3:
+        rest = r2
+        other_triangle = r1
+    elif len(r2.convex_hull()) == 3:
+        rest = r1
+        other_triangle = r2
+    else:
+        raise Exception("Bad cut")
+
+    yield Shape(triangle.triangles + rest.triangles + other_triangle.triangles)
+
+    for p in triangle.convex_hull():
+        if not point_eq(p, b) and not point_eq(p, c):
+            anchor = p
+
+    tri_trans = (corner2[0] - anchor[0], corner2[1] - anchor[1])
+    triangle = triangle.translate(tri_trans)
+    yield Shape(triangle.triangles + rest.triangles + other_triangle.triangles)
+    otri_trans = (anchor[0] - b[0], anchor[1] - b[1])
+    other_triangle = other_triangle.translate(otri_trans)
+    yield Shape(rest.triangles + triangle.triangles + other_triangle.triangles)
+

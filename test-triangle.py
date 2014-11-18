@@ -5,6 +5,7 @@ from tkinter import ttk
 from geometry import *
 from random import randint
 from collections import defaultdict
+from operator import methodcaller
 import math
 
 PHI = (1 + 5**0.5) / 2
@@ -162,6 +163,23 @@ def orientate_shapes():
     for r in new_rect:
         draw_rect(r)
 
+def merge_shapes():
+    global rectangles
+    new_rect = None
+    for r in rectangles:
+        if new_rect == None:
+            new_rect = r
+        else:
+            new_rect = new_rect.merge_square(r)
+    for iss in rectangles.values():
+        for i in iss:
+            canvas.delete(i)
+    rectangles = dict()
+    new_rect = new_rect.orientate()
+    x, y = new_rect.convex_hull()[0]
+    new_rect = new_rect.translate((100 - x, 100 - y))
+    draw_rect(new_rect)
+
 root = Tk()
 frame = ttk.Frame(root)
 canvas = Canvas(frame, width=canvas_height*PHI, height=canvas_height)
@@ -178,6 +196,7 @@ right_angle = ttk.Button(frame, text='Right-angle', command = lambda : set_state
 rectangle = ttk.Button(frame, text='Rectangle', command = lambda : set_state(RECT_MODE))
 square = ttk.Button(frame, text='Square', command = square_rects)
 orientate = ttk.Button(frame, text='Orientate', command = orientate_shapes)
+merge = ttk.Button(frame, text='Merge', command = merge_shapes)
 
 frame.grid()
 canvas.grid()
@@ -189,4 +208,5 @@ right_angle.grid()
 rectangle.grid()
 square.grid()
 orientate.grid()
+merge.grid()
 root.mainloop()

@@ -569,3 +569,58 @@ class Shape:
         x2, y2 = hull[1]
         xd, yd = x1 - x2, y1 - y2
         return self.rotate(hull[1], math.atan2(yd, xd))
+    
+    def merge_square(self, square):
+        """Takes this square and another square and returns a bigger square of
+        equal area."""
+        # Make sure it's a square
+        s1, s2 = self.orientate(), square.orientate()
+
+        assert float_eq(s1.height().length(), s1.width().length())
+        assert float_eq(s2.height().length(), s2.width().length())
+
+        s1 = s1 if s1.height().length() > s2.height().length() else s2
+        s2 = s2 if s1.height().length() > s2.height().length() else s1
+
+        right_most = sorted(s1.convex_hull(), key=cmp_to_key(point_cmp))[3]
+        left_most =  sorted(s2.convex_hull(), key=cmp_to_key(point_cmp))[1]
+
+        t = (right_most[0] - left_most[0], right_most[1] - left_most[1])
+        s2 = s2.translate(t)
+
+        a1, b1, c1, d1 = sorted(s1.convex_hull(), key=cmp_to_key(point_cmp))
+        a2, b2, c2, d2 = sorted(s2.convex_hull(), key=cmp_to_key(point_cmp))
+        l1 = s1.height().length()
+        l2 = s2.height().length()
+        cut_point = (b1[0] + l2, b1[1])
+        cut1 = LineSegment(a1, cut_point).to_line()
+        cut2 = LineSegment(c2, cut_point).to_line()
+        combined = Shape(s1.triangles + s2.triangles)
+        ns1, ns2 = combined.split(cut1)
+
+        if len(ns1.convex_hull()) == 3:
+            triangle = ns1
+            rest = ns2
+        elif len(ns2.convex_hull()) == 3:
+            triangle = ns2
+            rest = ns1
+        else:
+            raise Exception("Bad cut" + str(ns1.convex_hull()) + str(ns2.convex_hull()))
+        
+        triangle = triangle.rotate(a1, math.pi / 2)
+        combined = Shape(triangle.triangles + rest.triangles)
+
+        ns1, ns2 = combined.split(cut2)
+
+        if len(ns1.convex_hull()) == 3:
+            triangle = ns1
+            rest = ns2
+        elif len(ns2.convex_hull()) == 3:
+            triangle = ns2
+            rest = ns1
+        else:
+            raise Exception("Bad cut" + str(ns1.convex_hull()) + str(ns2.convex_hull()))
+        
+        triangle = triangle.rotate(c2, math.pi / 2 * 3)
+        combined = Shape(triangle.triangles + rest.triangles)
+        return combined

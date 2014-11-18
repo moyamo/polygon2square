@@ -84,7 +84,6 @@ def squarify_polygon(*args):
     """Takes the polygon, triangulates it and enables the controls"""
     global frames
     frames = pg.FrameList(points)
-    clear_canvas()
     enable_controls()
     jump_to_position(0)
 

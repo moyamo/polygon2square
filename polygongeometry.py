@@ -21,9 +21,10 @@ class FrameList:
         while len(self._cache) <= i:
             try:
                 f = next(self._generator)
+                self._cache.append(f)
             except StopIteration:
                 raise IndexError('FrameList index out of bounds')
-            self._cache.append(f)
+        print(self._cache[i])
         return self._cache[i]
 
     def _polygon2triangles(self):
@@ -38,7 +39,7 @@ class FrameList:
         """"A generator function that returns frames of converting a polygon
         to a square"""
         last = self._polygon2triangles()
-        yield last
+        yield last[:]
         new_last = list()
         # Turn all triangles to right-angled triangles
         while len(last) > 0:
@@ -71,7 +72,7 @@ class FrameList:
             p = q.convex_hull()[0]
             t = (50 - p[0], 50 - p[1])
             last.append(q.translate(t))
-            yield last
+            yield last[:]
 
 def triangle2rectangle(tri):
     """Turns a right angle triangle into a rectangle (Shape).
@@ -79,7 +80,6 @@ def triangle2rectangle(tri):
     This function is a generator function that generates a Shape for every step
     needed to turn the triangle into a rectangle.
     """
-
     p = tri.points
     # The point at right angle
     right = tri.largest_angle()

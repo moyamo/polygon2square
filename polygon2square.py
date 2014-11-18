@@ -90,9 +90,13 @@ def squarify_polygon(*args):
 
 def jump_to_position(pos):
     """Jump to the position (-1 for final position)"""
-    clear_canvas()
-    draw_shapes(frames[pos])
-    position.set(str(pos))
+    try:
+        f = frames[pos]
+        clear_canvas()
+        draw_shapes(f)
+        position.set(str(pos))
+    except IndexError:
+        pass
 
 root = Tk()
 

@@ -19,7 +19,10 @@ class FrameList:
     def __getitem__(self, i):
         """Returns the ith Frame"""
         while len(self._cache) <= i:
-            f = next(self._generator)
+            try:
+                f = next(self._generator)
+            except StopIteration:
+                raise IndexError('FrameList index out of bounds')
             self._cache.append(f)
         return self._cache[i]
 

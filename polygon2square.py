@@ -46,16 +46,27 @@ def add_point(event):
 _triangle_color = defaultdict(lambda : randint(0, 0xFFFFFF))
 def triangle_color(tri):
     """Return the color of the triangle.
-    
+
     If the triangle has no color, assign it a random color.
+
+    The color is based on the area of the triangle (i.e. two triangles with
+    equal area will have the same color). This means that the color of a
+    triangle will be preserved through rotations and translations (but not
+    splits)
+    
     """
-    color = _triangle_color[tri]
+    color = _triangle_color[int(tri.area()/pg.PRECISION)]
     return '#' + hex(color)[2:].rjust(6, '0')
 
 def draw_triangle(tri):
     """Take a triangle and draws it on the canvas"""
     i = canvas.create_polygon(tri.points, fill=triangle_color(tri))
     canvas.addtag('triangle', 'withtag', i)
+    a = tri.points
+    b = tri.points[1:] + (tri.points[0],)
+    for p, q in zip(a, b):
+        i = canvas.create_line((p[0], p[1], q[0], q[1]))
+        canvas.addtag('line', 'withtag', i)
 
 def draw_shapes(shapes):
     """Take a list of Shapes or Triangles and draws it on the canvas."""

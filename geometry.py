@@ -3,10 +3,11 @@
 import math
 from functools import cmp_to_key, partial
 
+PRECISION = 2**(-10)
+
 def float_eq(a, b):
     """Check if two floats are equal within a certain accuracy."""
-    epsilon = 2**(-10)
-    return abs(a - b) < epsilon
+    return abs(a - b) < PRECISION
 
 def point_eq(a, b):
     """Check if two points are equal within a certain accuracy."""
@@ -270,6 +271,14 @@ class Triangle:
                 cur_max = ang
                 big_ang = i
         return big_ang
+
+    def area(self):
+        """Return area of triangle"""
+        x0, y0 = self.points[0]
+        x1, y1 = self.points[1]
+        x2, y2 = self.points[2]
+        area = abs(0.5 * ((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)))
+        return area
     
     def rotate(self, pivot, rangle):
         """Return a new triangle rotate clockwise (by angle) around pivot.

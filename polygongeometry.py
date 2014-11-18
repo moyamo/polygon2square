@@ -17,7 +17,11 @@ class FrameList:
         self._cache = list()
 
     def __getitem__(self, i):
-        """Returns the ith Frame"""
+        """Returns the ith Frame
+        
+        NOTE: the shape that is actively being worked on should be the last
+        Shape in the frame
+        """
         while len(self._cache) <= i:
             try:
                 f = next(self._generator)
@@ -36,7 +40,11 @@ class FrameList:
 
     def _squarify(self):
         """"A generator function that returns frames of converting a polygon
-        to a square"""
+        to a square
+
+        NOTE: the shape that is actively being worked on should be the last
+        Shape in the frame
+        """
         last = self._polygon2triangles()
         yield last[:]
         new_last = list()
@@ -44,7 +52,7 @@ class FrameList:
         while len(last) > 0:
             t = last.pop()
             new_last.extend(t.to_rightangle())
-            yield new_last + last
+            yield last + new_last
 
         # Turn all right-angled triangles to rectangles
         last, new_last = new_last, list()
@@ -54,7 +62,7 @@ class FrameList:
             for t in triangle2rectangle(t):
                 a = new_last.pop()
                 new_last.append(t)
-                yield new_last + last
+                yield last + new_last
 
         # Turn all rectangles to squares
         last, new_last = new_last, list()
@@ -64,7 +72,7 @@ class FrameList:
             for r in rectangle2square(s):
                 new_last.pop()
                 new_last.append(r)
-                yield new_last + last
+                yield last + new_last
 
         # Merge all squares
         last, new_last = new_last, list()

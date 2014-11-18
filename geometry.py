@@ -1,15 +1,30 @@
 #!/usr/bin/env python3
 
 import math
+from functools import cmp_to_key, partial
 
 def float_eq(a, b):
     """Check if two floats are equal within a certain accuracy."""
-    epsilon = 2**(-30)
+    epsilon = 2**(-10)
     return abs(a - b) < epsilon
 
 def point_eq(a, b):
     """Check if two points are equal within a certain accuracy."""
     return float_eq(a[0], b[0]) and float_eq(a[1], b[1])
+
+def point_cmp(a, b):
+    """Check if two points are equal, less than or greater than within a
+    certain accuracy."""
+    if point_eq(a, b):
+        return 0
+    elif float_eq(a[0], b[0]) and a[1] < b[1]:
+        return -1
+    elif float_eq(a[0], b[0]) and a[1] > b[1]:
+        return 1
+    elif a < b:
+        return -1
+    else:
+        return 1
 
 def line_intersects_segment(line, line_segment):
     """Returns the intersection the Line and LineSegment or None if they do
@@ -39,6 +54,9 @@ class LineSegment:
         """point1 and point2 represent the two bounding points of the segment
         """
         self.points = (point1, point2)
+
+    def __repr__(self):
+        return repr(self.points)
 
     def length(self):
         x1, y1 = self.points[0]
@@ -89,10 +107,7 @@ class LineSegment:
             """Returns true if x is between a and b (inclusive)"""
             s = min(a, b)
             t = max(a, b)
-            if s <= x <= t:
-                return True
-            else:
-                return False
+            return (s <= x or float_eq(s, x)) and (x <= t or float_eq(x, t))
 
         x, y = point
         x1, y1 = self.points[0]
@@ -204,7 +219,13 @@ class Triangle:
         a = segs[i].length()
         b = segs[(i + 1) % 3].length()
         c = segs[(i + 2) % 3].length()
-        return math.acos((a**2 - b**2 - c**2)/(-2*b*c))
+        thing = (a**2 - b**2 - c**2)/(-2*b*c)
+        # Get rid of rounding errors for boundry values
+        if float_eq(thing, -1):
+            thing = -1
+        elif float_eq(thing, 1):
+            thing = 1
+        return math.acos(thing)
     
     def largest_angle(self):
         """Return the the number of the point at the largest angle"""

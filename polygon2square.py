@@ -166,4 +166,6 @@ end = ttk.Button(controlsframe, text='>>', command = lambda : jump_to_position(-
 end.state(['disabled'])
 end.grid(column=4, row=0, sticky = (N, S, W, E))
 
+root.bind('<Left>', lambda x : stepback.invoke())
+root.bind('<Right>', lambda x : stepforward.invoke())
 root.mainloop()

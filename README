@@ -1,0 +1,19 @@
+polygon2square
+==============
+
+Turn your polygons into squares!
+
+Usage
+-----
+
+Running the polygon2square.py will open the polygon2square window.
+
+Place the vertices of the polygon by clicking on the canvas (The canvas is to the
+left of the buttons).
+
+Click the Squarify button to start squarifying the polygon.
+
+You can use the arrow keys or the buttons to step through turning the polygon
+into a square.
+
+Use the clear button to clear the canvas to draw another polygon.

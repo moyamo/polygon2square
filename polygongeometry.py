@@ -84,10 +84,9 @@ class FrameList:
                 last.append(s)
                 yield last[:]
             q = last.pop()
-            p = q.convex_hull()[0]
-            t = (50 - p[0], 50 - p[1])
-            last.append(q.translate(t))
-            yield last[:]
+            q = q.translate((0, q.height().length()))
+            last.append(q)
+            yield last
 
 def triangle2rectangle(tri):
     """Turns a right angle triangle into a rectangle (Shape).

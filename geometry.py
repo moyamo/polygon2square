@@ -475,9 +475,9 @@ class Shape:
 
     def orientate(self):
         """Rotates the shape so that the first segment in the convex hull is
-        parralell to the x-axis."""
+        parallel to the x-axis."""
         hull = self.convex_hull()
         x1, y1 = hull[0]
         x2, y2 = hull[1]
-        xd, yd = x1 - x2, y1 - y2
-        return self.rotate(hull[1], math.atan2(yd, xd))
+        xd, yd = x2 - x1, y2 - y1
+        return self.rotate(hull[0], math.atan2(yd, xd))

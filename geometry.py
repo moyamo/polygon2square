@@ -414,16 +414,17 @@ class Shape:
         return Shape([t.rotate(pivot, rangle) for t in self.triangles])
     
     def vertices(self):
-        """Return vertices inside this shape."""
+        """Return unique vertices inside this shape.
+        
+        NOTE: this method runs in O(V log V)
+        """
         vertices = list()
         for t in self.triangles:
             vertices.extend(t.points)
+        vertices.sort(key=cmp_to_key(point_cmp))
         undup = list()
         for v in vertices:
-            for u in undup:
-                if point_eq(u, v):
-                    break
-            else:
+            if len(undup) == 0 or not point_eq(v, undup[-1]):
                 undup.append(v)
         return undup
     

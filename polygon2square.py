@@ -100,6 +100,16 @@ def squarify_polygon(*args):
 
 def jump_to_position(pos):
     """Jump to the position (-1 for final position)"""
+    # If the position is less than zero, we need to genrate all positions
+    if pos < 0:
+        a = 0
+        try:
+            # Generate and find the last frame
+            while True:
+                f = frames[a]
+                a += 1
+        except IndexError:
+            pos = a + pos
     try:
         f = frames[pos]
         clear_canvas()
@@ -152,8 +162,8 @@ stepforward = ttk.Button(controlsframe, text='>|',
 stepforward.state(['disabled'])
 stepforward.grid(column=3, row=0, sticky = (W, E, N, S))
 
-start = ttk.Button(controlsframe, text='>>', command = lambda : jump_to_position(-1), width=2)
-start.state(['disabled'])
-start.grid(column=4, row=0, sticky = (N, S, W, E))
+end = ttk.Button(controlsframe, text='>>', command = lambda : jump_to_position(-1), width=2)
+end.state(['disabled'])
+end.grid(column=4, row=0, sticky = (N, S, W, E))
 
 root.mainloop()
